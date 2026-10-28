@@ -1,0 +1,16 @@
+# Nur für Rechner OHNE lokales PostgreSQL (z. B. Laptop):
+#   docker compose up -d
+#   in .env: PG_PORT=5433 und PG_ADMIN_PASSWORD=postgres
+#   python data/load_postgres.py
+services:
+  postgres:
+    image: postgres:16
+    container_name: markt_agent_db
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata: {}

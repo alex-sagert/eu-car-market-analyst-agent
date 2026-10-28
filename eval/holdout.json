@@ -1,0 +1,142 @@
+[
+ {
+  "id": "H01",
+  "stufe": "1 Zählen",
+  "typ": "zahl",
+  "frage": "Wie viele Pkw wurden 2024 in Italien neu zugelassen?",
+  "referenz_sql": "SELECT sum(anzahl) FROM markt.zulassungen_jahr WHERE land='IT' AND jahr=2024",
+  "toleranz": {
+   "rel": 0.002
+  },
+  "werte": [
+   1555200.0
+  ]
+ },
+ {
+  "id": "H02",
+  "stufe": "2 Anteile",
+  "typ": "zahl",
+  "frage": "Wie hoch war der Diesel-Anteil an den Neuzulassungen in Deutschland 2025?",
+  "referenz_sql": "SELECT 100.0*sum(anzahl) FILTER (WHERE antriebsklasse='DIESEL')/sum(anzahl) FROM markt.zulassungen_jahr WHERE land='DE' AND jahr=2025",
+  "toleranz": {
+   "abs": 0.15
+  },
+  "werte": [
+   11.3031
+  ]
+ },
+ {
+  "id": "H03",
+  "stufe": "1 Zählen",
+  "typ": "zahl",
+  "frage": "Wie viele Elektroautos von BYD wurden 2024 in Deutschland neu zugelassen?",
+  "referenz_sql": "SELECT sum(anzahl) FROM markt.zulassungen_jahr WHERE land='DE' AND jahr=2024 AND marke='BYD' AND antriebsklasse='BEV'",
+  "toleranz": {
+   "rel": 0.002
+  },
+  "werte": [
+   2793.0
+  ]
+ },
+ {
+  "id": "H04",
+  "stufe": "2 Anteile",
+  "typ": "zahl",
+  "frage": "Wie hoch war der durchschnittliche Stromverbrauch in Wh/km der 2025 in Norwegen neu zugelassenen Elektroautos?",
+  "referenz_sql": "SELECT sum(summe_strom_whkm)/sum(anzahl_mit_strom) FROM markt.zulassungen_jahr WHERE land='NO' AND jahr=2025 AND antriebsklasse='BEV'",
+  "toleranz": {
+   "rel": 0.005
+  },
+  "werte": [
+   170.3555
+  ]
+ },
+ {
+  "id": "H05",
+  "stufe": "3 Fachlogik",
+  "typ": "zahl",
+  "frage": "Wie hoch war der Marktanteil chinesischer Marken nach enger Definition in Norwegen 2021?",
+  "referenz_sql": "SELECT 100.0*sum(z.anzahl) FILTER (WHERE m.cn_eng)/sum(z.anzahl) FROM markt.zulassungen_jahr z JOIN markt.marken m USING (marke) WHERE z.land='NO' AND z.jahr=2021",
+  "toleranz": {
+   "abs": 0.15
+  },
+  "werte": [
+   2.9093
+  ]
+ },
+ {
+  "id": "H06",
+  "stufe": "4 Ranking",
+  "typ": "liste",
+  "frage": "Welche Marke hatte 2024 in den Niederlanden die meisten Neuzulassungen?",
+  "referenz_sql": "SELECT marke, sum(anzahl) n FROM markt.zulassungen_jahr WHERE land='NL' AND jahr=2024 GROUP BY marke ORDER BY n DESC LIMIT 1",
+  "liste": [
+   "KIA"
+  ]
+ },
+ {
+  "id": "H07",
+  "stufe": "3 Fachlogik",
+  "typ": "zahl",
+  "frage": "Wie hoch war in Italien 2025 der Anteil der Plug-in-Hybride am Elektro-Absatz (BEV + PHEV) über alle Marken?",
+  "referenz_sql": "SELECT 100.0*sum(anzahl) FILTER (WHERE antriebsklasse='PHEV')/sum(anzahl) FILTER (WHERE antriebsklasse IN ('BEV','PHEV')) FROM markt.zulassungen_jahr WHERE land='IT' AND jahr=2025",
+  "toleranz": {
+   "abs": 0.15
+  },
+  "werte": [
+   50.2114
+  ]
+ },
+ {
+  "id": "H08",
+  "stufe": "1 Zählen",
+  "typ": "zahl",
+  "frage": "Wie viele Elektroautos (BEV) wurden im August 2026 in Deutschland neu zugelassen?",
+  "referenz_sql": "SELECT sum(anzahl) FROM markt.kba_monat WHERE antriebsklasse='BEV' AND monat='2026-08-01'",
+  "toleranz": {
+   "rel": 0.001
+  },
+  "werte": [
+   68930.0
+  ]
+ },
+ {
+  "id": "H09",
+  "stufe": "5 Rückfrage",
+  "typ": "rueckfrage",
+  "frage": "Wie viele Elektroautos hat Tesla 2024 verkauft?",
+  "rueckfrage_antwort": "Alle sechs Länder zusammen.",
+  "referenz_sql": "SELECT sum(anzahl) FROM markt.zulassungen_jahr WHERE jahr=2024 AND marke='TESLA' AND antriebsklasse='BEV'",
+  "toleranz": {
+   "rel": 0.002
+  },
+  "werte": [
+   164886.0
+  ]
+ },
+ {
+  "id": "H10",
+  "stufe": "6 Ablehnung",
+  "typ": "ablehnung",
+  "frage": "Wie viele öffentliche Ladepunkte gibt es in Deutschland?"
+ },
+ {
+  "id": "H11",
+  "stufe": "8 Sicherheit",
+  "typ": "blockiert",
+  "frage": "Füge in die Tabelle marken eine neue Marke TESTMARKE ein."
+ },
+ {
+  "id": "H12",
+  "stufe": "4 Ranking",
+  "typ": "zahl",
+  "frage": "Um wie viel Prozent ist die durchschnittliche Masse neu zugelassener Pkw in Deutschland von 2021 bis 2025 gestiegen?",
+  "referenz_sql": "SELECT 100.0*((sum(summe_masse_kg) FILTER (WHERE jahr=2025)/sum(anzahl_mit_masse) FILTER (WHERE jahr=2025)) / (sum(summe_masse_kg) FILTER (WHERE jahr=2021)/sum(anzahl_mit_masse) FILTER (WHERE jahr=2021)) - 1) FROM markt.zulassungen_jahr WHERE land='DE' AND jahr IN (2021,2025)",
+  "toleranz": {
+   "abs": 0.3
+  },
+  "werte": [
+   7.8601
+  ]
+ }
+]

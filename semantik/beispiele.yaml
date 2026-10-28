@@ -1,0 +1,47 @@
+# Beispielabfragen (Few-Shot). Werden per Ähnlichkeitssuche ausgewählt.
+# Bewusst KEINE Überschneidung mit eval/goldset.json: andere Länder, Jahre, Marken oder Kennzahlen.
+
+- frage: Wie viele Pkw wurden 2023 in Frankreich neu zugelassen?
+  sql: SELECT sum(anzahl) AS neuzulassungen FROM markt.zulassungen_jahr WHERE land = 'FR' AND jahr = 2023
+
+- frage: Wie hoch war der BEV-Anteil in Italien 2024?
+  sql: SELECT 100.0 * sum(anzahl) FILTER (WHERE antriebsklasse = 'BEV') / sum(anzahl) AS bev_anteil_pct FROM markt.zulassungen_jahr WHERE land = 'IT' AND jahr = 2024
+
+- frage: Wie viele Plug-in-Hybride von Volvo wurden 2024 in den Niederlanden zugelassen?
+  sql: SELECT sum(anzahl) AS phev FROM markt.zulassungen_jahr WHERE land = 'NL' AND jahr = 2024 AND marke = 'VOLVO' AND antriebsklasse = 'PHEV'
+
+- frage: Wie hoch war der durchschnittliche Stromverbrauch neuer Elektroautos in Frankreich 2024?
+  sql: SELECT sum(summe_strom_whkm) / sum(anzahl_mit_strom) AS wh_pro_km FROM markt.zulassungen_jahr WHERE land = 'FR' AND jahr = 2024 AND antriebsklasse = 'BEV'
+
+- frage: Welche fünf Marken hatten 2023 in Italien die meisten Neuzulassungen?
+  sql: SELECT marke, sum(anzahl) AS neuzulassungen FROM markt.zulassungen_jahr WHERE land = 'IT' AND jahr = 2023 GROUP BY marke ORDER BY neuzulassungen DESC LIMIT 5
+
+- frage: Wie hat sich der Marktanteil chinesischer Marken (enge Definition) in Frankreich von 2021 bis 2025 entwickelt?
+  sql: SELECT z.jahr, 100.0 * sum(z.anzahl) FILTER (WHERE m.cn_eng) / sum(z.anzahl) AS cn_anteil_pct FROM markt.zulassungen_jahr z JOIN markt.marken m USING (marke) WHERE z.land = 'FR' GROUP BY z.jahr ORDER BY z.jahr
+
+- frage: Wie hoch war der PHEV-Anteil am Elektro-Absatz von BYD in Spanien je Halbjahr 2024?
+  sql: SELECT CASE WHEN extract(month FROM monat) <= 6 THEN '2024-H1' ELSE '2024-H2' END AS halbjahr, 100.0 * sum(anzahl) FILTER (WHERE antriebsklasse = 'PHEV') / sum(anzahl) FILTER (WHERE antriebsklasse IN ('BEV','PHEV')) AS phev_anteil_e_absatz_pct FROM markt.zulassungen_monat WHERE land = 'ES' AND jahr = 2024 AND marke = 'BYD' GROUP BY 1 ORDER BY 1
+
+- frage: Wie viele Elektroautos wurden 2024 in Norwegen je Monat neu zugelassen?
+  sql: SELECT monat, sum(anzahl) AS bev FROM markt.zulassungen_monat WHERE land = 'NO' AND jahr = 2024 AND antriebsklasse = 'BEV' GROUP BY monat ORDER BY monat
+
+- frage: Wie viele Teslas hat das KBA 2026 je Monat in Deutschland gemeldet?
+  sql: SELECT monat, sum(anzahl) AS neuzulassungen FROM markt.kba_monat WHERE marke = 'TESLA' AND monat >= '2026-01-01' GROUP BY monat ORDER BY monat
+
+- frage: Welcher Anteil der Elektroautos ging im ersten Halbjahr 2026 in Deutschland an gewerbliche Halter?
+  sql: SELECT 100.0 * sum(anzahl) FILTER (WHERE haltergruppe = 'Gewerblich') / sum(anzahl) FILTER (WHERE haltergruppe = 'Insgesamt') AS gewerblich_pct FROM markt.kba_halter_monat WHERE kategorie = 'BEV' AND monat BETWEEN '2026-01-01' AND '2026-06-01'
+
+- frage: Wie viele Pkw über 2 Tonnen wurden 2024 in Frankreich zugelassen?
+  sql: SELECT sum(anzahl_ueber_2t) AS ueber_2t FROM markt.zulassungen_jahr WHERE land = 'FR' AND jahr = 2024
+
+- frage: Wie viele BEV chinesischer Marken (enge Definition) wurden in Italien in den zwölf Monaten vor und ab November 2024 zugelassen?
+  sql: SELECT sum(z.anzahl) FILTER (WHERE z.monat BETWEEN '2023-11-01' AND '2024-10-01') AS vorher, sum(z.anzahl) FILTER (WHERE z.monat BETWEEN '2024-11-01' AND '2025-10-01') AS nachher FROM markt.zulassungen_monat z JOIN markt.marken m USING (marke) WHERE m.cn_eng AND z.land = 'IT' AND z.antriebsklasse = 'BEV'
+
+- frage: Welches Skoda-Modell wurde 2024 in Deutschland am häufigsten zugelassen?
+  sql: SELECT modell, sum(anzahl) AS neuzulassungen FROM markt.zulassungen_jahr WHERE land = 'DE' AND jahr = 2024 AND marke = 'SKODA' GROUP BY modell ORDER BY neuzulassungen DESC LIMIT 1
+
+- frage: Wie schwer waren Neuwagen in Spanien im Durchschnitt je Jahr?
+  sql: SELECT jahr, sum(summe_masse_kg) / sum(anzahl_mit_masse) AS masse_kg FROM markt.zulassungen_jahr WHERE land = 'ES' GROUP BY jahr ORDER BY jahr
+
+- frage: Wie hoch war der Anteil französischer Heimatmarken an den Neuzulassungen in Frankreich 2023?
+  sql: SELECT 100.0 * sum(z.anzahl) FILTER (WHERE m.heimatmarkt = 'FR') / sum(z.anzahl) AS heimatmarken_pct FROM markt.zulassungen_jahr z JOIN markt.marken m USING (marke) WHERE z.land = 'FR' AND z.jahr = 2023

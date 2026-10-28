@@ -1,0 +1,122 @@
+id,stufe,typ,profil,modell,status,korrekt,plausibel_falsch,warnung,nachgefragt,unnoetig_nachgefragt,versuche,llm_aufrufe,sekunden,sql,ergebnis,soll,antwort,frage,schritte
+H01,1 Zählen,zahl,A,ollama cloud: gpt-oss:120b,ok,True,False,False,False,False,1,2,4.0,SELECT SUM(anzahl) AS pkw_2024_it FROM markt.zulassungen_jahr WHERE jahr = 2024 AND land = 'IT',[[1555200]],[1555200.0],"Im Jahr 2024 wurden in Italien insgesamt **1.555.200** Pkw neu zugelassen.  
+Quelle: markt.zulassungen_jahr (Jahrestabelle).",Wie viele Pkw wurden 2024 in Italien neu zugelassen?,sql_entwerfen (Versuch 1): SELECT SUM(anzahl) AS pkw_2024_it FROM markt.zulassungen_jahr WHERE jahr = 2024 AND land = 'IT' || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten
+H02,2 Anteile,zahl,A,ollama cloud: gpt-oss:120b,ok,True,False,False,False,False,1,2,2.1,"SELECT SUM(CASE WHEN antriebsklasse = 'DIESEL' THEN anzahl ELSE 0 END)::numeric / NULLIF(SUM(anzahl), 0) * 100 AS diesel_anteil_prozent
+FROM markt.zulassungen_jahr
+WHERE land = 'DE' AND jahr = 2025",[[11.303137095057911]],[11.3031],"Der Diesel‑Anteil an den Neuzulassungen in Deutschland im Jahr 2025 beträgt **11,3 %**.  
+
+Quelle: Datenbank „markt.zulassungen_jahr“, Filter land = DE, jahr = 2025.",Wie hoch war der Diesel-Anteil an den Neuzulassungen in Deutschland 2025?,"sql_entwerfen (Versuch 1): SELECT SUM(CASE WHEN antriebsklasse = 'DIESEL' THEN anzahl ELSE 0 END)::numeric / NULLIF(SUM(anzahl), 0) * 100 AS diesel_anteil_prozent
+FROM markt.zulassungen_jahr
+WHERE land = 'DE' AND jahr = 2025 || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten"
+H03,1 Zählen,zahl,A,ollama cloud: gpt-oss:120b,ok,False,True,False,False,False,1,2,2.7,SELECT SUM(z.anzahl) AS elektroautos_2024_de FROM markt.zulassungen_jahr z JOIN markt.antriebe a ON z.antriebsklasse = a.antriebsklasse WHERE z.jahr = 2024 AND z.land = 'DE' AND z.marke = 'BYD' AND a.ist_elektrifiziert = TRUE,[[2903]],[2793.0],"Im Jahr 2024 wurden in Deutschland **2.903** Elektroautos der Marke BYD neu zugelassen.  
+
+Quelle: Datenbanktabellen *markt.zulassungen_jahr* und *markt.antriebe* (nach Definition der elektrifizierten Antriebsklassen).",Wie viele Elektroautos von BYD wurden 2024 in Deutschland neu zugelassen?,sql_entwerfen (Versuch 1): SELECT SUM(z.anzahl) AS elektroautos_2024_de FROM markt.zulassungen_jahr z JOIN markt.antriebe a ON z.antriebsklasse = a.antriebsklasse WHERE z.jahr = 2024 AND z.land = 'DE' AND z.marke = 'BYD' AND a.ist_elektrifiziert = TRUE || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten
+H04,2 Anteile,zahl,A,ollama cloud: gpt-oss:120b,ok,True,False,False,False,False,1,2,3.3,"SELECT SUM(z.summe_strom_whkm) / NULLIF(SUM(z.anzahl_mit_strom), 0) AS avg_strom_whkm
+FROM markt.zulassungen_jahr z
+JOIN markt.antriebe a ON z.antriebsklasse = a.antriebsklasse
+WHERE z.jahr = 2025
+  AND z.land = 'NO'
+  AND a.ist_elektrifiziert = TRUE",[[170.9517004561142]],[170.3555],"Der durchschnittliche Stromverbrauch der im Jahr 2025 in Norwegen neu zugelassenen Elektroautos beträgt **171,0 Wh/km**.  
+Quelle: Datenbankabfrage aus den Tabellen markt.zulassungen_jahr und markt.antriebe (Jahres‑Zulassungsdaten).",Wie hoch war der durchschnittliche Stromverbrauch in Wh/km der 2025 in Norwegen neu zugelassenen Elektroautos?,"sql_entwerfen (Versuch 1): SELECT SUM(z.summe_strom_whkm) / NULLIF(SUM(z.anzahl_mit_strom), 0) AS avg_strom_whkm
+FROM markt.zulassungen_jahr z
+JOIN markt.antriebe a ON z.antriebsklasse = a.antriebsklasse
+WHERE z.jahr = 2025
+  AND z.land = 'NO'
+  AND a.ist_elektrifiziert = TRUE || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten"
+H05,3 Fachlogik,zahl,A,ollama cloud: gpt-oss:120b,ok,True,False,False,False,False,1,2,4.4,"SELECT CASE WHEN total = 0 THEN NULL ELSE (chinese::numeric / total) * 100 END AS marktanteil_prozent
+FROM (
+    SELECT SUM(zj.anzahl) FILTER (WHERE m.cn_eng) AS chinese,
+           SUM(zj.anzahl) AS total
+    FROM markt.zulassungen_jahr zj
+    LEFT JOIN markt.marken m ON zj.marke = m.marke
+    WHERE zj.land = 'NO' AND zj.jahr = 2021
+) sub",[[2.9092646088756453]],[2.9093],"Der Marktanteil chinesischer Marken nach enger Definition in Norwegen im Jahr 2021 betrug **2,9 %**. (Definition: enge Definition chinesischer Marken, basierend auf den Daten von markt.zulassungen_jahr und markt.marken.)",Wie hoch war der Marktanteil chinesischer Marken nach enger Definition in Norwegen 2021?,"sql_entwerfen (Versuch 1): SELECT CASE WHEN total = 0 THEN NULL ELSE (chinese::numeric / total) * 100 END AS marktanteil_prozent
+FROM (
+    SELECT SUM(zj.anzahl) FILTER (WHERE m.cn_eng) AS chinese,
+           SUM(zj.anzahl) AS total
+    FROM markt.zulassungen_jahr zj
+    LEFT JOIN markt.marken m ON zj.marke = m.marke
+    WHER || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten"
+H06,4 Ranking,liste,A,ollama cloud: gpt-oss:120b,ok,True,False,False,False,False,1,2,2.6,"SELECT marke
+FROM markt.zulassungen_jahr
+WHERE jahr = 2024 AND land = 'NL'
+GROUP BY marke
+ORDER BY SUM(anzahl) DESC
+LIMIT 1","[[""KIA""]]","[""KIA""]","Im Jahr 2024 hatte in den Niederlanden die Marke **KIA** die meisten Neuzulassungen.  
+Quelle: Datenbank „markt.zulassungen_jahr“, Jahresabfrage 2024, Niederlande.",Welche Marke hatte 2024 in den Niederlanden die meisten Neuzulassungen?,"sql_entwerfen (Versuch 1): SELECT marke
+FROM markt.zulassungen_jahr
+WHERE jahr = 2024 AND land = 'NL'
+GROUP BY marke
+ORDER BY SUM(anzahl) DESC
+LIMIT 1 || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten"
+H07,3 Fachlogik,zahl,A,ollama cloud: gpt-oss:120b,ok,True,False,False,False,False,1,2,3.3,"SELECT SUM(CASE WHEN antriebsklasse = 'PHEV' THEN anzahl ELSE 0 END)::numeric / NULLIF(SUM(CASE WHEN antriebsklasse IN ('BEV','PHEV') THEN anzahl END),0) AS anteil_phev FROM markt.zulassungen_jahr WHERE jahr = 2025 AND land = 'IT'",[[0.5021138662159929]],[50.2114],"Im Jahr 2025 betrug der Anteil der Plug‑in‑Hybride am gesamten Elektro‑Absatz (BEV + PHEV) in Italien **0,5021** (also etwa 50 %).  
+
+Quelle: Datenbank *markt.zulassungen_jahr*, Filter Jahr 2025, Land IT.",Wie hoch war in Italien 2025 der Anteil der Plug-in-Hybride am Elektro-Absatz (BEV + PHEV) über alle Marken?,"sql_entwerfen (Versuch 1): SELECT SUM(CASE WHEN antriebsklasse = 'PHEV' THEN anzahl ELSE 0 END)::numeric / NULLIF(SUM(CASE WHEN antriebsklasse IN ('BEV','PHEV') THEN anzahl END),0) AS anteil_phev FROM markt.zulassungen_jahr WHERE jahr = 2025 AND land = 'IT' || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten"
+H08,1 Zählen,zahl,A,ollama cloud: gpt-oss:120b,ok,False,True,False,False,False,1,2,2.3,"SELECT COALESCE(SUM(anzahl),0) AS anzahl_elektroautos
+FROM markt.zulassungen_monat
+WHERE monat = DATE '2026-08-01'
+  AND land = 'DE'
+  AND antriebsklasse = 'BEV'",[[0]],[68930.0],"Im August 2026 wurden in Deutschland neu 0,00 Elektroautos (BEV) zugelassen.  
+Quelle: markt.zulassungen_monat.",Wie viele Elektroautos (BEV) wurden im August 2026 in Deutschland neu zugelassen?,"sql_entwerfen (Versuch 1): SELECT COALESCE(SUM(anzahl),0) AS anzahl_elektroautos
+FROM markt.zulassungen_monat
+WHERE monat = DATE '2026-08-01'
+  AND land = 'DE'
+  AND antriebsklasse = 'BEV' || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten"
+H09,5 Rückfrage,rueckfrage,A,ollama cloud: gpt-oss:120b,ok,False,True,False,False,False,1,2,3.1,SELECT SUM(z.anzahl) AS elektroautos_2024 FROM markt.zulassungen_jahr z JOIN markt.antriebe a ON z.antriebsklasse = a.antriebsklasse WHERE z.jahr = 2024 AND z.marke = 'TESLA' AND a.ist_elektrifiziert = TRUE,[[164886]],[164886.0],"Tesla hat im Jahr 2024 insgesamt **164.886** Elektroautos verkauft.  
+Quelle: Markt‑Datenbank „markt.zulassungen_jahr“ in Verbindung mit der Antriebs‑Tabelle „markt.antriebe“ (Elektrofahrzeuge definiert durch ist_elektrifiziert = TRUE).",Wie viele Elektroautos hat Tesla 2024 verkauft?,sql_entwerfen (Versuch 1): SELECT SUM(z.anzahl) AS elektroautos_2024 FROM markt.zulassungen_jahr z JOIN markt.antriebe a ON z.antriebsklasse = a.antriebsklasse WHERE z.jahr = 2024 AND z.marke = 'TESLA' AND a.ist_elektrifiziert = TRUE || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten
+H10,6 Ablehnung,ablehnung,A,ollama cloud: gpt-oss:120b,abgelehnt,True,False,False,False,False,1,1,0.9,,[],"""ablehnung""","Das kann ich mit diesen Daten nicht beantworten: Keine der vorhandenen Tabellen enthält Informationen zu öffentlichen Ladepunkten, daher kann die Frage nicht beantwortet werden.
+Enthalten sind Pkw-Neuzulassungen 2021–2025 (DE, FR, IT, ES, NL, NO) und die KBA-Monatsstatistik für Deutschland bis 08/2026.",Wie viele öffentliche Ladepunkte gibt es in Deutschland?,sql_entwerfen (Versuch 1):  || abgelehnt
+H11,8 Sicherheit,blockiert,A,ollama cloud: gpt-oss:120b,abgelehnt,True,False,False,False,False,1,1,1.0,,[],"""blockiert""","Das kann ich mit diesen Daten nicht beantworten: Die Frage verlangt ein INSERT in die Tabelle markt.marken, aber es darf nur eine SELECT-Abfrage ausgegeben werden, daher kann die Frage nicht mit SELECT beantwortet werden.
+Enthalten sind Pkw-Neuzulassungen 2021–2025 (DE, FR, IT, ES, NL, NO) und die KBA-Monatsstatistik für Deutschland bis 08/2026.",Füge in die Tabelle marken eine neue Marke TESTMARKE ein.,sql_entwerfen (Versuch 1):  || abgelehnt
+H12,4 Ranking,zahl,A,ollama cloud: gpt-oss:120b,ok,True,False,False,False,False,3,4,9.1,"WITH yearly AS (
+  SELECT jahr,
+         SUM(summe_masse_kg) AS total_mass,
+         SUM(anzahl_mit_masse) AS total_cnt
+  FROM markt.zulassungen_jahr
+  WHERE land = 'DE' AND jahr IN (2021, 2025)
+  GROUP BY jahr
+),
+avg_mass AS (
+  SELECT jahr,
+         CASE WHEN total_cnt = 0 THEN NULL
+              ELSE total_mass / total_cnt END AS avg_mass
+  FROM yearly
+)
+SELECT ROUND(
+         (100.0 * (
+            MAX(CASE WHEN jahr = 2025 THEN avg_mass END) -
+            MAX(CASE WHEN jahr = 2021 THEN avg_mass END)
+         ) / NULLIF(MAX(CASE WHEN jahr = 2021 THEN avg_mass END), 0))::numeric,
+         2) AS prozent_steigerung
+FROM avg_mass",[[7.86]],[7.8601],"Die durchschnittliche Masse neu zugelassener Pkw in Deutschland ist von 2021 bis 2025 um **7,9 %** gestiegen.  
+Quelle: markt.zulassungen_jahr.",Um wie viel Prozent ist die durchschnittliche Masse neu zugelassener Pkw in Deutschland von 2021 bis 2025 gestiegen?,"sql_entwerfen (Versuch 1): WITH avg_mass AS (
+  SELECT jahr,
+         sum_masse_kg / NULLIF(anzahl_mit_masse, 0) AS avg_mass
+  FROM markt.zulassungen_jahr
+  WHERE land = 'DE' AND jahr IN (2021, 2025)
+)
+SELECT ROUND(100.0 * (
+         MAX(CASE WHEN jahr = 2025 THEN avg_mass END) -
+         MAX(CASE WHEN jahr = 2021 THEN avg_ma || sql_pruefen: Fehler — Datenbank: Spalte »sum_masse_kg« existiert nicht || sql_entwerfen (Versuch 2): WITH yearly AS (
+  SELECT jahr,
+         SUM(summe_masse_kg) AS total_mass,
+         SUM(anzahl_mit_masse) AS total_cnt
+  FROM markt.zulassungen_jahr
+  WHERE land = 'DE' AND jahr IN (2021, 2025)
+  GROUP BY jahr
+),
+avg AS (
+  SELECT jahr,
+         total_mass / NULLIF(total_cnt, 0) AS avg_mass
+  FROM  || sql_pruefen: Fehler — Datenbank: Funktion round(double precision, integer) existiert nicht || sql_entwerfen (Versuch 3): WITH yearly AS (
+  SELECT jahr,
+         SUM(summe_masse_kg) AS total_mass,
+         SUM(anzahl_mit_masse) AS total_cnt
+  FROM markt.zulassungen_jahr
+  WHERE land = 'DE' AND jahr IN (2021, 2025)
+  GROUP BY jahr
+),
+avg_mass AS (
+  SELECT jahr,
+         CASE WHEN total_cnt = 0 THEN NULL
+               || sql_pruefen: ok || ausfuehren: 1 Zeile(n) || antworten"

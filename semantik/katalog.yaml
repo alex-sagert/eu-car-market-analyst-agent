@@ -1,0 +1,108 @@
+# Semantische Schicht: verbindliche Fachbegriffe und Regeln.
+# Das ist der Teil, den ein Unternehmen vor einem KI-Self-Service pflegen muss.
+# Jeder Eintrag: begriff, definition, optional sql (Muster) und rueckfrage (true = bei fehlender Angabe nachfragen).
+
+datenumfang: |
+  Enthalten: Pkw-Neuzulassungen 2021-2025 in sechs Ländern (DE, FR, IT, ES, NL, NO) aus EEA co2cars,
+  dazu die KBA-Monatsstatistik NUR für Deutschland von 2025-01 bis 2026-08 (Marken x Antrieb, Haltergruppen).
+  Merkmale je Land, Jahr/Monat, Marke, Konzern und MODELLFAMILIE (z. B. ID.3, Model Y, Seal U) und Antrieb:
+  Anzahl Neuzulassungen, Fahrzeugmasse, CO2-Wert (WLTP), Stromverbrauch (Wh/km), Leistung (kW),
+  Anzahl über 2 Tonnen; daraus Anteile, Durchschnitte, Rankings und Veränderungen.
+  Marken-Stammdaten: Konzern, Markenland, Heimatmarkt, chinesische Marke (eng/weit).
+  KBA zusätzlich: Haltergruppen (privat, gewerblich, Handel, Hersteller, Vermietung).
+  NICHT enthalten: Preise, Listenpreise, Restwerte, Gebrauchtwagen, Fahrzeugbestand, Prognosen/Zukunft,
+  andere Länder (z. B. Polen, Österreich, Schweden), Produktionsort, Lieferzeiten, Kundendaten.
+
+begriffe:
+  - begriff: Neuzulassungen / verkaufte Autos / Pkw
+    definition: Summe der Spalte anzahl. "Verkauft" wird als neu zugelassen verstanden.
+    sql: "sum(anzahl)"
+
+  - begriff: Jahreswerte
+    definition: >-
+      Ganze Kalenderjahre immer aus markt.zulassungen_jahr. Diese Tabelle enthält auch Fahrzeuge ohne
+      Zulassungsdatum (2021 rund 7 %). markt.zulassungen_monat nur für Monate, Halbjahre oder Zeitfenster.
+
+  - begriff: Jahr 2026 / aktuelle Monate
+    definition: >-
+      2026 gibt es nur in markt.kba_monat (nur Deutschland). Benzin und Diesel sind dort zusammengefasst
+      als KBA_VERBRENNER. Gesamtzahl = Summe über alle Antriebsklassen.
+
+  - begriff: Elektroauto / E-Auto / Stromer
+    definition: Reines Batterieauto, antriebsklasse = 'BEV'. Plug-in-Hybride zählen NICHT dazu.
+
+  - begriff: Elektro-Absatz / Steckerfahrzeuge / E-Absatz / elektrifiziert mit Stecker
+    definition: BEV + PHEV zusammen.
+    sql: "antriebsklasse IN ('BEV','PHEV')"
+
+  - begriff: Hybrid ohne Stecker / Vollhybrid / Mild-Hybrid
+    definition: antriebsklasse = 'HEV' (enthält Mild-Hybride).
+
+  - begriff: Anteil / Marktanteil / Quote
+    definition: >-
+      In Prozent: 100.0 * Summe der Teilmenge / Summe der Gesamtmenge, beide mit denselben Filtern
+      für Land und Zeitraum. Nie Anteile aus Einzelzeilen mitteln.
+    sql: "100.0 * sum(anzahl) FILTER (WHERE <teilmenge>) / sum(anzahl)"
+
+  - begriff: PHEV-Anteil am Elektro-Absatz
+    definition: Plug-in-Hybride geteilt durch (BEV + PHEV) derselben Gruppe, in Prozent.
+    sql: "100.0 * sum(anzahl) FILTER (WHERE antriebsklasse='PHEV') / sum(anzahl) FILTER (WHERE antriebsklasse IN ('BEV','PHEV'))"
+
+  - begriff: chinesische Marke
+    definition: >-
+      Zwei Definitionen in markt.marken: cn_eng = Marken chinesischer Konzerne mit eigenem Auftritt
+      (BYD, MG, Leapmotor, Omoda, Jaecoo, Xpeng ...); cn_weit = zusätzlich Volvo, Polestar, smart, Lotus, DR, EVO, Ebro, Elaris.
+      Steht in der Frage weder "eng" noch "weit" (oder eine eindeutige Umschreibung), NACHFRAGEN.
+    rueckfrage: true
+    optionen: ["Enge Definition (cn_eng)", "Weite Definition (cn_weit)"]
+
+  - begriff: EU-Länder / EU-Märkte / Zollgebiet
+    definition: DE, FR, IT, ES, NL (laender.eu_zollunion = true). Norwegen ist nicht in der EU-Zollunion.
+
+  - begriff: EU-Zölle / Zoll / seit den Zöllen
+    definition: >-
+      EU-Ausgleichszölle auf in China gebaute BEV, in Kraft seit 31.10.2024. Vorher = bis Oktober 2024,
+      nachher = ab November 2024. Standardvergleich im Projekt: je 12 Monate,
+      vorher 2023-11-01 bis 2024-10-01, nachher 2024-11-01 bis 2025-10-01, fünf EU-Länder (ohne NO).
+      Fragt jemand "seit den Zöllen", ohne Zeitfenster, Kennzahl oder China-Definition zu nennen, NACHFRAGEN.
+    rueckfrage: true
+    optionen: ["Je 12 Monate vor und ab November 2024, enge China-Definition, fünf EU-Länder", "Halbjahre 2024-H1 gegen 2025-H2, enge China-Definition, fünf EU-Länder"]
+
+  - begriff: Land fehlt
+    definition: >-
+      Der Datensatz hat sechs Länder. Fragen nach Neuzulassungen oder Anteilen einer Marke OHNE Land
+      und ohne "insgesamt/alle Länder" sind mehrdeutig: NACHFRAGEN. Rankings über Länder ("welches Land")
+      sind nicht mehrdeutig.
+    rueckfrage: true
+    optionen: ["Nur Deutschland", "Alle sechs Länder zusammen"]
+
+  - begriff: Halbjahr / Quartal
+    definition: H1 = Januar bis Juni, H2 = Juli bis Dezember. Aus markt.zulassungen_monat bzw. markt.kba_monat.
+    sql: "CASE WHEN extract(month FROM monat) <= 6 THEN 'H1' ELSE 'H2' END"
+
+  - begriff: Durchschnitt (Masse, CO2, Stromverbrauch, Leistung)
+    definition: Summe geteilt durch die passende Anzahl mit Wert, nie avg() über Zeilen.
+    sql: "sum(summe_masse_kg) / sum(anzahl_mit_masse)"
+
+  - begriff: Schreibweise Marken und Modelle
+    definition: >-
+      marke in GROSSBUCHSTABEN wie in markt.marken: VW = 'VOLKSWAGEN', Mercedes = 'MERCEDES-BENZ', Tesla = 'TESLA'.
+      modell ist die Modellfamilie. Schreibweise uneinheitlich: Sonderregeln für einige Marken ('Model Y', 'ID.3',
+      'iX1', '3er', 'Seal U', 'Atto 3'), sonst GROSSBUCHSTABEN ('KUGA', 'PANDA', 'GOLF'). Modelle mit ILIKE filtern.
+
+  - begriff: Heimatmarke / Heimvorteil
+    definition: Marke, deren marken.heimatmarkt dem betrachteten Land entspricht (z. B. heimatmarkt = 'DE').
+
+  - begriff: gewerbliche Halter / Flotte
+    definition: >-
+      markt.kba_halter_monat (nur Deutschland). Anteil = haltergruppe 'Gewerblich' / haltergruppe 'Insgesamt'
+      bei derselben kategorie (GESAMT, BEV, PHEV, HEV).
+
+  - begriff: Abweichung co2cars gegen KBA
+    definition: (co2cars - KBA) / KBA in Prozent, gleiche Antriebsklasse und gleicher Zeitraum, Deutschland.
+
+regeln:
+  - Nur SELECT auf Tabellen im Schema markt. Keine Systemtabellen.
+  - Kennzahlen mit sprechenden Spaltennamen ausgeben (z. B. AS bev_anteil_pct).
+  - Prozentwerte als Zahl zwischen 0 und 100 (100.0 * ...).
+  - Keine Tabellen-Dumps; aggregieren und höchstens die nötigen Zeilen ausgeben.

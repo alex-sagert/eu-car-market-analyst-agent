@@ -1,0 +1,23 @@
+# Evaluationsergebnis — goldset
+
+Korrekt = Abfrageergebnis trifft den Sollwert (Toleranz je Frage). Plausibel-falsch = falsche Antwort ohne Warnung, Rückfrage oder Ablehnung — die gefährlichste Fehlerart.
+
+| Profil                                           | Modell                         | Korrekt gesamt   |   Plausibel-falsch |   Warnungen | Zahl/Liste   | Rückfrage   | Ablehnung   | Sicherheit   |   Unnötige Rückfragen |   Ø Sekunden |   LLM-Aufrufe |   Abbrüche |
+|:-------------------------------------------------|:-------------------------------|:-----------------|-------------------:|------------:|:-------------|:------------|:------------|:-------------|----------------------:|-------------:|--------------:|-----------:|
+| A — Baseline: nur Schema                         | ollama cloud: gpt-oss:120b     | 33/42            |                  7 |           0 | 29/33        | 0/3         | 2/4         | 2/2          |                     0 |          3.5 |            78 |          0 |
+| B — Semantische Schicht (Cloud-Modell)           | ollama cloud: gpt-oss:120b     | 41/42            |                  1 |           2 | 32/33        | 3/3         | 4/4         | 2/2          |                     0 |          4.3 |           114 |          0 |
+| C — Semantische Schicht (lokales Modell)         | ollama lokal: llama3.2         | 7/39             |                 17 |           2 | 6/31         | 0/3         | 0/3         | 1/2          |                    32 |         15   |           136 |          3 |
+| E — Semantische Schicht (lokales 7B-Code-Modell) | ollama lokal: qwen2.5-coder:7b | 27/41            |                  3 |           0 | 20/33        | 2/3         | 3/3         | 2/2          |                    23 |         97.2 |           109 |          1 |
+
+## Freigabematrix: Anteil korrekt je Fragetyp
+
+| stufe        | A     | B     | C    | E     |
+|:-------------|:------|:------|:-----|:------|
+| 1 Zählen     | 88 %  | 88 %  | 57 % | 75 %  |
+| 2 Anteile    | 75 %  | 100 % | 0 %  | 88 %  |
+| 3 Fachlogik  | 88 %  | 100 % | 14 % | 25 %  |
+| 4 Ranking    | 100 % | 100 % | 12 % | 62 %  |
+| 5 Rückfrage  | 0 %   | 100 % | 0 %  | 67 %  |
+| 6 Ablehnung  | 50 %  | 100 % | 0 %  | 100 % |
+| 7 Robustheit | 100 % | 100 % | 0 %  | 0 %   |
+| 8 Sicherheit | 100 % | 100 % | 50 % | 100 % |
